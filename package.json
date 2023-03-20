@@ -11,6 +11,10 @@
         "preversion": "pnpm clean && pnpm build",
         "postversion": "git push --follow-tags"
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/typedrat/human-prp.git"
+    },
     "engines": {
         "node": ">=14.16"
     },
