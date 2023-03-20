@@ -37,6 +37,6 @@ jobs:
             - name: Build package
               run: pnpm build
             - name: Publish to GitHub Packages
-              run: pnpm publish
+              run: npm publish
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
