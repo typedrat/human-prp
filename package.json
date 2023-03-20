@@ -1,0 +1,29 @@
+{
+    "name": "human-prp",
+    "version": "0.1.0",
+    "description": "A library that uses psuedo-random permutations to generate human-friendly IDs.",
+    "type": "module",
+    "author": "Alexis Williams (alexis@typedr.at)",
+    "license": "MIT",
+    "scripts": {
+        "preversion": "pnpm build",
+        "build": "make -s",
+        "postversion": "git push --follow-tags"
+    },
+    "engines": {
+        "node": ">=14.16"
+    },
+    "exports": {
+        ".": "./dist/index.js",
+        "./*.js": "./dist/*.js",
+        "./feistel.wasm.js": null
+    },
+    "devDependencies": {
+        "prettier": "^2.8.4",
+        "typescript": "^5.0.2",
+        "wasmwrap": "^1.0.0"
+    },
+    "dependencies": {
+        "human-id": "^4.0.0"
+    }
+}

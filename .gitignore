@@ -1,0 +1,10 @@
+node_modules/
+.vscode/
+.idea/
+
+*.o
+*.wasm
+*.wasm.ts
+/test-feistel*
+/dist
+/lib
