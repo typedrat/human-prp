@@ -1,20 +1,27 @@
-import cipher, { CipherDirection } from "./_wasm.js";
 import { adjectives, nouns, verbs, adverbs } from "human-id";
+import { BiDict } from "./bidict.js";
+import cipher, { CipherDirection } from "./_wasm.js";
 
-const adjectiveBiDict = toBiDict(adjectives);
-const adjectivesLen = BigInt(adjectives.length);
+type WordKind = "adjective" | "noun" | "verb" | "adverb";
 
-const nounBiDict = toBiDict(nouns);
-const nounsLen = BigInt(nouns.length);
-
-const verbBiDict = toBiDict(verbs);
-const verbsLen = BigInt(verbs.length);
-
-const adverbsBiDict = toBiDict(adverbs);
-const adverbsLen = BigInt(adverbs.length);
-
-const threeItemMax = adjectivesLen * nounsLen * verbsLen;
-const fourItemMax = adjectivesLen * nounsLen * verbsLen * adverbsLen;
+const wordInfo: { [K in WordKind]: BiDict<string> & { length: bigint } } = {
+    adjective: {
+        ...new BiDict(adjectives),
+        length: BigInt(adjectives.length),
+    },
+    adverb: {
+        ...new BiDict(adverbs),
+        length: BigInt(adverbs.length),
+    },
+    noun: {
+        ...new BiDict(nouns),
+        length: BigInt(nouns.length),
+    },
+    verb: {
+        ...new BiDict(verbs),
+        length: BigInt(verbs.length),
+    },
+};
 
 const UINT64_MAX = 2n ** 64n - 1n;
 const INT64_MIN = -(2n ** 63n - 1n);
@@ -38,28 +45,15 @@ export function toHumanId(
         throw new Error("`key` doesn't fit in 64 bits!");
     }
 
-    if (origId < threeItemMax) {
-        let encryptedId = cipher(
-            threeItemMax,
-            origId,
-            key,
-            CipherDirection.Encrypt
-        );
+    const format = origIdToFormat(origId);
+    const encryptedId = cipher(
+        formatToMaxValue(format),
+        origId,
+        key,
+        CipherDirection.Encrypt
+    );
 
-        const verbId = Number(encryptedId % verbsLen);
-        encryptedId /= verbsLen;
-        const nounId = Number(encryptedId % nounsLen);
-        encryptedId /= nounsLen;
-        const adjectiveId = Number(encryptedId);
-
-        return [
-            adjectiveBiDict.fromIdx.get(adjectiveId),
-            nounBiDict.fromIdx.get(nounId),
-            verbBiDict.fromIdx.get(verbId),
-        ].join(separator);
-    }
-
-    throw new Error(`Input too large: ${origId}`);
+    return formattedIdToWords(format, encryptedId).join(separator);
 }
 
 export function fromHumanId(
@@ -75,37 +69,94 @@ export function fromHumanId(
         words = humanId;
     }
 
-    let bigint: bigint;
-    if (words.length === 3) {
-        const [adjective, noun, verb] = words;
+    const format = humanIdToFormat(words.length);
+    let encryptedId = formattedWordsToId(format, words);
 
-        const adjectiveId = adjectiveBiDict.toIdx.get(adjective)!;
-        const nounId = nounBiDict.toIdx.get(noun)!;
-        const verbId = verbBiDict.toIdx.get(verb)!;
-
-        let encryptedId = adjectiveId * verbsLen * nounsLen;
-        encryptedId += nounId * verbsLen;
-        encryptedId += verbId;
-
-        bigint = cipher(
-            threeItemMax,
-            encryptedId,
-            key,
-            CipherDirection.Decrypt
-        );
+    if (encryptedId > INT64_MIN && encryptedId < UINT64_MAX) {
+        encryptedId = BigInt.asUintN(64, encryptedId);
     } else {
-        throw new Error(`Input too large: ${words.length} words`);
+        throw new Error("`encryptedId` doesn't fit in 64 bits!");
     }
+
+    const bigint = cipher(
+        formatToMaxValue(format),
+        encryptedId,
+        key,
+        CipherDirection.Decrypt
+    );
 
     return { bigint, number: Number(bigint) || undefined };
 }
 
-function toBiDict<T>(xs: T[]): {
-    fromIdx: Map<number, T>;
-    toIdx: Map<T, bigint>;
-} {
-    const fromIdx = new Map(xs.entries());
-    const toIdx = new Map(Array.from(fromIdx, ([k, v]) => [v, BigInt(k)]));
+//
 
-    return { fromIdx, toIdx };
+type Format = WordKind[];
+
+function origIdToFormat(id: bigint): Format {
+    let wordKinds: Format = ["adjective", "noun", "verb"];
+
+    id /= wordInfo.verb.length;
+    id /= wordInfo.noun.length;
+    id /= wordInfo.adjective.length;
+
+    if (id > 0) {
+        wordKinds.push("adverb");
+        id /= wordInfo.adverb.length;
+    }
+
+    while (id > 0) {
+        wordKinds.unshift("adjective");
+        id /= wordInfo.adjective.length;
+    }
+
+    return wordKinds;
+}
+
+function humanIdToFormat(idLen: number): Format {
+    let wordKinds: Format = ["adjective", "noun", "verb"];
+    idLen -= 3;
+
+    if (idLen > 0) {
+        wordKinds.push("adverb");
+        idLen--;
+    }
+
+    while (idLen > 0) {
+        wordKinds.unshift("adjective");
+        idLen--;
+    }
+
+    return wordKinds;
+}
+
+function formatToMaxValue(xs: Format): bigint {
+    return xs.reduce((val, kind) => val * wordInfo[kind].length, 1n);
+}
+
+function formattedIdToWords(format: Format, id: bigint): string[] {
+    let words: string[] = [];
+
+    format.reverse();
+    format.forEach((kind) => {
+        const wordId = id % wordInfo[kind].length;
+        id /= wordInfo[kind].length;
+
+        words.push(wordInfo[kind].fromIdx.get(wordId)!);
+    });
+    words.reverse();
+
+    return words;
+}
+
+function formattedWordsToId(format: Format, words: string[]): bigint {
+    let factor: bigint = 1n;
+    let id: bigint = 0n;
+
+    format.reverse();
+    format.forEach((kind, i) => {
+        id += wordInfo[kind].toIdx.get(words[i])! * factor;
+        factor *= wordInfo[kind].length;
+    });
+
+    return id;
 }

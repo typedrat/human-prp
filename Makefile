@@ -15,14 +15,17 @@ endif
 CFLAGS += -Wno-unknown-attributes -O3 -std=c17
 CXXFLAGS += -Wno-unknown-attributes -O3 -std=c++17
 
-library: dist/tsconfig.tsbuildinfo
+library: dist/metafile-esm.json dist/metafile-cjs.json
 
 all: exe library
 
 exe: $(EXECUTABLE)
 
-dist/tsconfig.tsbuildinfo: $(wildcard src/*.ts) src/feistel.wasm.ts
-	pnpm tsc
+dist/metafile-cjs.json: $(wildcard src/*.ts) src/feistel.wasm.ts
+	pnpm tsup --format cjs
+
+dist/metafile-esm.json: $(wildcard src/*.ts) src/feistel.wasm.ts
+	pnpm tsup --format esm --dts
 
 $(EXECUTABLE): test.cpp.o feistel.c.o
 	$(CLANGXX) $^ -o $@

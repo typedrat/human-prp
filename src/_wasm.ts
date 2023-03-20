@@ -1,11 +1,10 @@
 import { buffer as wasmCode } from "./feistel.wasm.js";
 
-const wasmInstance = await WebAssembly.instantiate(wasmCode);
+const wasmModule = new WebAssembly.Module(wasmCode);
+const wasmInstance = new WebAssembly.Instance(wasmModule);
 
-export const cycle_walking_cipher_wasm = wasmInstance.instance.exports
+export default wasmInstance.exports
     .cycle_walking_cipher_wasm as CycleWalkingCipherFn;
-
-export default cycle_walking_cipher_wasm;
 
 export const enum CipherDirection {
     Encrypt = 0,
@@ -13,7 +12,7 @@ export const enum CipherDirection {
 }
 
 type CycleWalkingCipherFn = (
-    maxval: bigint,
+    maxVal: bigint,
     value: bigint,
     crypt_key: bigint,
     direction: CipherDirection

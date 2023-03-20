@@ -1,29 +1,47 @@
 {
     "name": "human-prp",
     "version": "0.1.0",
-    "description": "A library that uses psuedo-random permutations to generate human-friendly IDs.",
+    "description": "A library that uses pseudorandom permutations to generate human-friendly IDs.",
     "type": "module",
     "author": "Alexis Williams (alexis@typedr.at)",
     "license": "MIT",
     "scripts": {
-        "preversion": "pnpm build",
+        "clean": "make clean",
         "build": "make -s",
+        "preversion": "pnpm clean && pnpm build",
         "postversion": "git push --follow-tags"
     },
     "engines": {
         "node": ">=14.16"
     },
+    "main": "dist/index.cjs",
     "exports": {
-        ".": "./dist/index.js",
-        "./*.js": "./dist/*.js",
-        "./feistel.wasm.js": null
+        ".": {
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs",
+            "types": "./dist/index.d.ts"
+        },
+        "./_wasm.js": {
+            "import": "./dist/_wasm.js",
+            "require": "./dist/_wasm.cjs",
+            "types": "./dist/_wasm.d.ts"
+        }
     },
-    "devDependencies": {
-        "prettier": "^2.8.4",
-        "typescript": "^5.0.2",
-        "wasmwrap": "^1.0.0"
+    "typesVersions": {
+        "*": {
+            "*": [
+                "./dist/index.d.ts",
+                "./dist/_wasm.d.ts"
+            ]
+        }
     },
     "dependencies": {
         "human-id": "^4.0.0"
+    },
+    "devDependencies": {
+        "prettier": "^2.8.4",
+        "tsup": "^6.7.0",
+        "typescript": "^5.0.2",
+        "wasmwrap": "^1.0.0"
     }
 }
