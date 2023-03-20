@@ -22,13 +22,13 @@ all: exe library
 exe: $(EXECUTABLE)
 
 dist/tsconfig.tsbuildinfo: $(wildcard src/*.ts) src/feistel.wasm.ts
-	npx tsc
+	pnpm tsc
 
 $(EXECUTABLE): test.cpp.o feistel.c.o
 	$(CLANGXX) $^ -o $@
 
 src/feistel.wasm.ts: feistel.wasm
-	npx wasmwrap --input $^ --output $@
+	pnpm wasmwrap --input $^ --output $@
 
 feistel.wasm: ./cbits/feistel.c
 	$(CLANG) $(CFLAGS) --target=wasm32 -nostdlib -Wl,--no-entry $^ -o $@
