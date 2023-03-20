@@ -37,3 +37,8 @@ jobs:
               run: pnpm install --frozen-lockfile
             - name: Build package
               run: pnpm build
+            - name: Archive build results
+              uses: actions/upload/artivact@v3
+              with:
+                  name: dist
+                  path: dist
