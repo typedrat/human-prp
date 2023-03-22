@@ -1,5 +1,5 @@
 {
-    "name": "@typedrat/human-prp",
+    "name": "human-prp",
     "version": "0.1.0",
     "description": "A library that uses pseudorandom permutations to generate human-friendly IDs.",
     "type": "module",
