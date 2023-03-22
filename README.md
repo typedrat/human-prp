@@ -1,5 +1,5 @@
 # human-prp
-![npm](https://img.shields.io/npm/v/human-prp) ![npm bundle size](https://deno.bundlejs.com/?q=human-prp&config={%22analysis%22:true}&badge=)
+[![npm](https://img.shields.io/npm/v/human-prp)](https://www.npmjs.com/package/human-prp) [![npm bundle size](https://deno.bundlejs.com/?q=human-prp&config={%22analysis%22:true}&badge=)](https://www.npmjs.com/package/human-prp)
 
 human-prp is a library that uses pseudorandom permutations to generate
 human-friendly IDs.
